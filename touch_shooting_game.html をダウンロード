@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タッチシューティング</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #111; }
+    canvas { display: block; background: #000; }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+    }
+    button {
+      font-size: 24px;
+      padding: 15px 25px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="controls">
+    <button ontouchstart="moveLeft()" ontouchend="stopMove()">◀️</button>
+    <button ontouchstart="moveRight()" ontouchend="stopMove()">▶️</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let player = { x: canvas.width / 2, y: canvas.height - 60, size: 40 };
+    let bullets = [];
+    let enemies = [];
+    let moveDir = 0;
+
+    function moveLeft() { moveDir = -5; }
+    function moveRight() { moveDir = 5; }
+    function stopMove() { moveDir = 0; }
+
+    function drawPlayer() {
+      ctx.fillStyle = "lime";
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "white";
+      bullets.forEach(b => {
+        ctx.fillRect(b.x, b.y, 5, 10);
+        b.y -= 10;
+      });
+      bullets = bullets.filter(b => b.y > 0);
+    }
+
+    function spawnEnemy() {
+      let x = Math.random() * (canvas.width - 30);
+      enemies.push({ x, y: 0, size: 30 });
+    }
+
+    function drawEnemies() {
+      ctx.fillStyle = "red";
+      enemies.forEach(e => {
+        ctx.fillRect(e.x, e.y, e.size, e.size);
+        e.y += 2;
+      });
+      enemies = enemies.filter(e => e.y < canvas.height);
+    }
+
+    function detectCollision() {
+      enemies = enemies.filter(enemy => {
+        for (let bullet of bullets) {
+          if (
+            bullet.x < enemy.x + enemy.size &&
+            bullet.x + 5 > enemy.x &&
+            bullet.y < enemy.y + enemy.size &&
+            bullet.y + 10 > enemy.y
+          ) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      player.x += moveDir;
+      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+
+      drawPlayer();
+      drawBullets();
+      drawEnemies();
+      detectCollision();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    setInterval(() => {
+      bullets.push({ x: player.x + player.size / 2 - 2.5, y: player.y });
+    }, 300);
+
+    setInterval(spawnEnemy, 1000);
+
+    gameLoop();
+  </script>
+</body>
+</html>
